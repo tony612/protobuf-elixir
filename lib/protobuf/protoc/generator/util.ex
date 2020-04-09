@@ -8,13 +8,24 @@ defmodule Protobuf.Protoc.Generator.Util do
     Enum.join(list, ".")
   end
 
-  def mod_name(%{module_prefix: prefix}, ns) when is_list(ns) do
+  def mod_name(ctx, ns) when is_list(ns) do
+    prefix = prefixed_name(ctx)
     ns |> join_name() |> attach_pkg(prefix)
   end
 
-  def mod_name(%{module_prefix: prefix}, ns) do
+  def mod_name(ctx, ns) do
+    prefix = prefixed_name(ctx)
     attach_pkg(ns, prefix)
   end
+
+  def prefixed_name(%{package_prefix: nil, module_prefix: nil, package: pkg} = _ctx),
+    do: pkg
+
+  def prefixed_name(%{package_prefix: prefix, module_prefix: nil, package: pkg} = _ctx),
+    do: attach_raw_pkg(pkg, prefix)
+
+  def prefixed_name(%{module_prefix: module_prefix} = _ctx),
+    do: module_prefix
 
   defp attach_pkg(name, ""), do: name
   defp attach_pkg(name, nil), do: name
@@ -22,6 +33,8 @@ defmodule Protobuf.Protoc.Generator.Util do
 
   def attach_raw_pkg(name, ""), do: name
   def attach_raw_pkg(name, nil), do: name
+  def attach_raw_pkg("", pkg), do: pkg
+  def attach_raw_pkg(nil, pkg), do: pkg
   def attach_raw_pkg(name, pkg), do: pkg <> "." <> name
 
   def options_to_str(opts) do

@@ -24,8 +24,8 @@ defmodule Protobuf.Protoc.Generator do
   def generate_content(ctx, desc) do
     ctx = %{
       ctx
-      | package: desc.package || "",
-        syntax: syntax(desc.syntax),
+      | syntax: syntax(desc.syntax),
+        package: desc.package || "",
         dep_type_mapping: get_dep_type_mapping(ctx, desc.dependency, desc.name)
     }
 

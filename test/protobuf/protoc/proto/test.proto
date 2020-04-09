@@ -1,7 +1,7 @@
 syntax = "proto2";
 
 // This package holds interesting messages.
-package my.test;  // dotted package name
+package test;  // dotted package name
 
 //import "imp.proto";
 import "multi/multi1.proto";  // unused import
