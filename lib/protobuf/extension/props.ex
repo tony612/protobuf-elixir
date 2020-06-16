@@ -5,7 +5,7 @@ defmodule Protobuf.Extension.Props do
     @moduledoc false
     @type t :: %__MODULE__{
             extendee: module,
-            field_props: FieldProps.T
+            field_props: FieldProps.t
           }
     defstruct extendee: nil,
               field_props: nil

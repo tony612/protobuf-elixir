@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package ext;
+
+import "brex_elixirpb.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+
+// To run
+// protoc -I src -I test/protobuf/protoc/proto --elixir_out=custom_field_options=true:test/protobuf/protoc/proto_gen --plugin=./protoc-gen-elixir test/protobuf/protoc/proto/extension2.proto
+
+message Nested{
+  oneof my_timestamp {
+    google.protobuf.Timestamp dt = 1 [(brex.elixirpb.field).extype="DateTime.t"];
+    google.protobuf.Timestamp ndt = 2 [(brex.elixirpb.field).extype="NaiveDateTime.t"];
+  }
+}
+
+message MyMessage {
+  google.protobuf.DoubleValue f1 = 1 [(brex.elixirpb.field).extype="float"];
+  google.protobuf.FloatValue f2 = 2 [(brex.elixirpb.field).extype="float"];
+  google.protobuf.Int64Value f3 = 3 [(brex.elixirpb.field).extype="integer"];
+  google.protobuf.UInt64Value f4 = 4 [(brex.elixirpb.field).extype="non_neg_integer"];
+  google.protobuf.Int32Value f5 = 5 [(brex.elixirpb.field).extype="integer"];
+  google.protobuf.UInt32Value f6 = 6 [(brex.elixirpb.field).extype="non_neg_integer"];
+  google.protobuf.BoolValue f7 = 7 [(brex.elixirpb.field).extype="boolean"];
+  google.protobuf.StringValue f8 = 8 [(brex.elixirpb.field).extype="String.t"];
+  google.protobuf.BytesValue f9 = 9 [(brex.elixirpb.field).extype="String.t()"];
+
+  google.protobuf.StringValue no_extype = 10;
+  repeated google.protobuf.StringValue repeated_field = 11 [(brex.elixirpb.field).extype="String.t"];
+  uint64 normal1 = 12;
+  string normal2 = 13;
+  Nested nested = 14;
+}

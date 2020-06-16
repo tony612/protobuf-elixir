@@ -14,6 +14,12 @@ defmodule Protobuf.Protoc.CLITest do
     assert ctx == %Context{plugins: ["grpc"], gen_descriptors?: true}
   end
 
+  test "parse_params/2 parse custom_field_options" do
+    ctx = %Context{}
+    ctx = parse_params(ctx, "plugins=grpc,custom_field_options=true")
+    assert ctx == %Context{plugins: ["grpc"], custom_field_options?: true}
+  end
+
   test "find_types/2 returns multiple files" do
     ctx = %Context{}
     descs = [FileDescriptorProto.new(name: "file1"), FileDescriptorProto.new(name: "file2")]

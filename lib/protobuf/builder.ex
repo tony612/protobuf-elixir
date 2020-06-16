@@ -13,6 +13,9 @@ defmodule Protobuf.Builder do
     new_maybe_strict(mod, attrs, _strict? = true)
   end
 
+  def field_default(_, %{options: options} = props) when not is_nil(options) do
+    Protobuf.FieldOptionsProcessor.type_default(props.type, options)
+  end
   def field_default(_, %{default: default}) when not is_nil(default), do: default
   def field_default(_, %{repeated?: true}), do: []
   def field_default(_, %{map?: true}), do: %{}
@@ -69,14 +72,13 @@ defmodule Protobuf.Builder do
           f_props = props.field_props[props.field_tags[k]]
 
           v =
-            if f_props.embedded? do
-              if f_props.repeated? do
-                Enum.map(v, fn i -> f_props.type.new(i) end)
-              else
-                f_props.type.new(v)
-              end
-            else
-              v
+            cond do
+              not is_nil(f_props.options) -> Protobuf.FieldOptionsProcessor.new(f_props.type, v, f_props.options)
+              not is_nil(f_props.options) and f_props.repeated? ->
+                Enum.map(v, fn i -> Protobuf.FieldOptionsProcessor.new(f_props.type, i, f_props.options) end)
+              f_props.embedded? and f_props.repeated? -> Enum.map(v, fn i -> f_props.type.new(i) end)
+              f_props.embedded? -> f_props.type.new(v)
+              true -> v
             end
 
           Map.put(acc, k, v)

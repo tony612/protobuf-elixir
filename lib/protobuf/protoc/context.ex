@@ -29,7 +29,11 @@ defmodule Protobuf.Protoc.Context do
             gen_descriptors?: false,
 
             # Elixirpb.FileOptions
-            custom_file_options: %{}
+            custom_file_options: %{},
+
+            # Brex.Elixirpb.FieldOptions
+            # Note: Right now just true or false, could have more complex values later
+            custom_field_options?: false
 
   def cal_file_options(ctx, nil) do
     %{ctx | custom_file_options: %{}, module_prefix: ctx.package || ""}

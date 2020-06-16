@@ -1,0 +1,23 @@
+syntax = "proto2";
+
+package brex.elixirpb;
+import "google/protobuf/descriptor.proto";
+
+// Sample Field Option Extension
+// Defines an extension to specify the elixir type generated for the given field.
+
+// For example:
+// google.protobuf.StringValue my_string = 1 [(brex.elixirpb.field).extype="String.t"];
+
+// To compile
+//protoc --plugin=./protoc-gen-elixir  --proto_path=lib --proto_path=src --elixir_out=lib src/brex_elixirpb.proto
+
+message FieldOptions {
+  // Specifies an elixir type to generate for this field. This will override usual type.
+  optional string extype = 1;
+}
+
+extend google.protobuf.FieldOptions {
+  // Note: number to change
+  optional FieldOptions field = 65007;
+}

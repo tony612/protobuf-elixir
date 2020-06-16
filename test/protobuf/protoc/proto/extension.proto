@@ -4,9 +4,16 @@ package ext;
 
 // -I src is needed, see Makefile
 import "elixirpb.proto";
+import "brex_elixirpb.proto";
+import "google/protobuf/wrappers.proto";
 
 option (elixirpb.file).module_prefix = "Protobuf.Protoc.ExtTest";
 
 message Foo {
   optional string a = 1;
+}
+
+message Dual {
+  optional google.protobuf.StringValue a = 1 [(brex.elixirpb.field).extype="String.t"];
+  optional google.protobuf.StringValue b = 2;
 }

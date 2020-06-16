@@ -3,6 +3,7 @@ defmodule Protobuf.DSLTest do
 
   alias Protobuf.FieldProps
   alias TestMsg.{Foo, Foo2}
+  alias TestMsg.Ext.DualUseCase
 
   defmodule DefaultSyntax do
     use Protobuf
@@ -137,6 +138,18 @@ defmodule Protobuf.DSLTest do
     msg_props = Foo.__message_props__()
     field_props = msg_props.field_props
     assert %FieldProps{fnum: 17, name: "p", deprecated?: true} = field_props[17]
+  end
+
+  test "field options is nil by default" do
+    msg_props = DualUseCase.__message_props__()
+    field_props = msg_props.field_props
+    assert %FieldProps{options: nil} = field_props[2]
+  end
+
+  test "field options can by keyword list" do
+    msg_props = DualUseCase.__message_props__()
+    field_props = msg_props.field_props
+    assert %FieldProps{options: [extype: "String.t"]} = field_props[1]
   end
 
   test "supports enum" do

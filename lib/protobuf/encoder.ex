@@ -98,6 +98,22 @@ defmodule Protobuf.Encoder do
   def skip_field?(_, _, _), do: false
 
   @spec encode_field(atom, any, FieldProps.t()) :: iodata
+   defp encode_field(
+         :custom,
+         val,
+         %{encoded_fnum: fnum, repeated?: is_repeated, map?: is_map, type: type, options: options} =
+           prop
+       ) do
+    repeated = is_repeated || is_map
+
+    repeated_or_not(val, repeated, fn v ->
+      v = if is_map, do: struct(prop.type, %{key: elem(v, 0), value: elem(v, 1)}), else: v
+      encoded = Protobuf.FieldOptionsProcessor.encode_type(type, v, options)
+      byte_size = byte_size(encoded)
+      [fnum, encode_varint(byte_size), encoded]
+    end)
+  end
+
   defp encode_field(:normal, val, %{encoded_fnum: fnum, type: type, repeated?: is_repeated}) do
     repeated_or_not(val, is_repeated, fn v ->
       [fnum, encode_type(type, v)]
@@ -124,6 +140,11 @@ defmodule Protobuf.Encoder do
     encoded = Enum.map(val, fn v -> encode_type(type, v) end)
     byte_size = IO.iodata_length(encoded)
     [fnum, encode_varint(byte_size), encoded]
+  end
+
+  @spec class_field(map) :: atom
+  defp class_field(%{options: options}) when not is_nil(options) do
+    :custom
   end
 
   @spec class_field(map) :: atom

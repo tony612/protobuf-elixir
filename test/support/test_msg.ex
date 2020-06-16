@@ -212,4 +212,32 @@ defmodule TestMsg do
     extend Ext.Foo2, :bar, 1047, optional: true, type: :string
     extend Ext.Foo1, :"Parent.foo", 1048, optional: true, type: Ext.EnumFoo, enum: true
   end
+
+  defmodule Ext.DualUseCase do
+    @moduledoc false
+    use Protobuf, syntax: :proto3
+
+    @type t :: %__MODULE__{
+            a: String.t() | nil,
+            b: Google.Protobuf.StringValue.t() | nil
+          }
+    defstruct [:a, :b]
+
+    field :a, 1, optional: true, type: Google.Protobuf.StringValue, options: [extype: "String.t"]
+    field :b, 2, optional: true, type: Google.Protobuf.StringValue
+  end
+
+  defmodule Ext.DualNonUse do
+    @moduledoc false
+    use Protobuf, syntax: :proto3
+
+    @type t :: %__MODULE__{
+            a: String.t() | nil,
+            b: Google.Protobuf.StringValue.t() | nil
+          }
+    defstruct [:a, :b]
+
+    field :a, 1, optional: true, type: Google.Protobuf.StringValue
+    field :b, 2, optional: true, type: Google.Protobuf.StringValue
+  end
 end

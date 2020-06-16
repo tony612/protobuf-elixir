@@ -49,5 +49,6 @@ defmodule Protobuf.Protoc.Generator.Util do
   end
 
   def print(v) when is_atom(v), do: inspect(v)
+  def print(v) when is_list(v), do: inspect(v)
   def print(v), do: v
 end

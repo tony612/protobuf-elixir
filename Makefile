@@ -14,6 +14,8 @@ gen-google-protos: protoc-gen-elixir
 
 gen-protos: protoc-gen-elixir
 	protoc -I src -I test/protobuf/protoc/proto --elixir_out=test/protobuf/protoc/proto_gen --plugin=./protoc-gen-elixir test/protobuf/protoc/proto/*.proto
+	protoc -I src -I test/protobuf/protoc/proto --elixir_out=custom_field_options=true:test/protobuf/protoc/proto_gen --plugin=./protoc-gen-elixir test/protobuf/protoc/proto/extension.proto
+	protoc -I src -I test/protobuf/protoc/proto --elixir_out=custom_field_options=true:test/protobuf/protoc/proto_gen --plugin=./protoc-gen-elixir test/protobuf/protoc/proto/extension2.proto
 	protoc -I src --elixir_out=lib --plugin=./protoc-gen-elixir elixirpb.proto
 
 .PHONY: clean gen_google_proto gen_test_protos

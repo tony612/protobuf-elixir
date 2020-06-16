@@ -6,7 +6,7 @@ defmodule Protobuf.MessageProps do
   @type t :: %__MODULE__{
           ordered_tags: [integer],
           tags_map: %{integer => integer},
-          field_props: %{integer => FieldProps.T},
+          field_props: %{integer => FieldProps.t},
           field_tags: %{atom => integer},
           repeated_fields: [atom],
           embedded_fields: [atom],
