@@ -14,6 +14,12 @@ defmodule Protobuf.Decoder do
     kvs = raw_decode_key(data, [])
     %{repeated_fields: repeated_fields} = msg_props = module.__message_props__()
     struct = build_struct(kvs, msg_props, module.new())
+    
+    struct = if Process.get({:protobuf, :return_maps}) do
+      struct = Map.put(struct, :__msg__, struct.__struct__)
+      Map.delete(struct, :__struct__)
+    else struct end
+    
     reverse_repeated(struct, repeated_fields)
   end
 
