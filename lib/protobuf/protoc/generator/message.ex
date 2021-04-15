@@ -4,9 +4,26 @@ defmodule Protobuf.Protoc.Generator.Message do
   alias Protobuf.TypeUtil
   alias Protobuf.Protoc.Generator.Enum, as: EnumGenerator
 
+  defp with_message_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [4, index]}
+  end
+
+  defp with_message_enum_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [5, index]}
+  end
+
+  defp with_message_field_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [2, index]}
+  end
+
+  defp with_message_oneof_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [8, index]}
+  end
+
   def generate_list(ctx, descs) do
     descs
-    |> Enum.map(fn desc -> generate(ctx, desc) end)
+    |> Enum.with_index()
+    |> Enum.map(fn {desc, index} -> generate(with_message_path(ctx, index), desc) end)
     |> Enum.unzip()
   end
 
@@ -15,48 +32,61 @@ defmodule Protobuf.Protoc.Generator.Message do
     ctx = %{ctx | namespace: msg_struct[:new_namespace]}
     {nested_enums, nested_msgs} = Enum.unzip(gen_nested_msgs(ctx, desc))
 
-    {gen_nested_enums(ctx, desc) ++ nested_enums,
-     nested_msgs ++ [gen_msg(ctx.syntax, msg_struct)]}
+    {gen_nested_enums(ctx, desc) ++ nested_enums, nested_msgs ++ [gen_msg(msg_struct)]}
   end
 
   def parse_desc(%{namespace: ns} = ctx, desc) do
     new_ns = ns ++ [Util.trans_name(desc.name)]
     fields = get_fields(ctx, desc)
+    oneofs = get_oneofs(ctx, desc.oneof_decl)
     extensions = get_extensions(desc)
     generate_desc = if ctx.gen_descriptors?, do: desc, else: nil
+    typespec = typespec_str(fields, oneofs, extensions)
 
     %{
       new_namespace: new_ns,
       name: Util.mod_name(ctx, new_ns),
       options: msg_opts_str(ctx, desc.options),
       structs: structs_str(desc, extensions),
-      typespec: typespec_str(fields, desc.oneof_decl, extensions),
-      fields: fields,
-      oneofs: oneofs_str(desc.oneof_decl),
+      typespec: typespec,
+      fields: gen_fields(ctx.syntax, fields),
+      oneofs: gen_oneofs(oneofs),
       desc: generate_desc,
-      extensions: extensions
+      extensions: extensions,
+      docs:
+        Util.moduledoc_str(
+          ctx,
+          String.contains?(typespec, "@typedoc")
+        )
     }
   end
 
-  defp gen_msg(syntax, msg_struct) do
+  defp gen_msg(msg_struct) do
     Protobuf.Protoc.Template.message(
       msg_struct[:name],
       msg_struct[:options],
       msg_struct[:structs],
       msg_struct[:typespec],
       msg_struct[:oneofs],
-      gen_fields(syntax, msg_struct[:fields]),
+      msg_struct[:fields],
       msg_struct[:desc],
-      gen_extensions(msg_struct[:extensions])
+      gen_extensions(msg_struct[:extensions]),
+      msg_struct[:docs]
     )
   end
 
   defp gen_nested_msgs(ctx, desc) do
-    Enum.map(desc.nested_type, fn msg_desc -> generate(ctx, msg_desc) end)
+    desc.nested_type
+    |> Enum.with_index()
+    |> Enum.map(fn {msg_desc, index} -> generate(with_message_path(ctx, index), msg_desc) end)
   end
 
   defp gen_nested_enums(ctx, desc) do
-    Enum.map(desc.enum_type, fn enum_desc -> EnumGenerator.generate(ctx, enum_desc) end)
+    desc.enum_type
+    |> Enum.with_index()
+    |> Enum.map(fn {enum_desc, index} ->
+      EnumGenerator.generate(with_message_enum_path(ctx, index), enum_desc)
+    end)
   end
 
   defp gen_fields(syntax, fields) do
@@ -64,7 +94,7 @@ defmodule Protobuf.Protoc.Generator.Message do
       label_str =
         if syntax == :proto3 && f[:label] != "repeated", do: "", else: "#{f[:label]}: true, "
 
-      ":#{f[:name]}, #{f[:number]}, #{label_str}type: #{f[:type]}#{opts_str}"
+      "field :#{f[:name]}, #{f[:number]}, #{label_str}type: #{f[:type]}#{opts_str}"
     end)
   end
 
@@ -102,48 +132,86 @@ defmodule Protobuf.Protoc.Generator.Message do
     Enum.map_join(struct.oneof_decl ++ fields, ", ", fn f -> ":#{f.name}" end)
   end
 
-  def typespec_str([], [], []), do: "  @type t :: %__MODULE__{}\n"
-  def typespec_str([], [], [_ | _]), do: "  @type t :: %__MODULE__{__pb_extensions__: map}\n"
+  def typespec_str([], [], []), do: "  @type t :: %__MODULE__{}"
+  def typespec_str([], [], [_ | _]), do: "  @type t :: %__MODULE__{__pb_extensions__: map}"
 
   def typespec_str(fields, oneofs, extensions) do
-    longest_field = fields |> Enum.max_by(&String.length(&1[:name]))
-    longest_width = String.length(longest_field[:name])
-    fields = Enum.filter(fields, fn f -> !f[:oneof] end)
-
-    types =
-      Enum.map(oneofs, fn f ->
-        {fmt_type_name(f.name, longest_width), "{atom, any}"}
+    dedicated_types =
+      Enum.map(fields, fn field ->
+        {field[:name], fmt_type(field), Util.fmt_doc_str(field[:location])}
       end)
 
-    types =
-      types ++
-        Enum.map(fields, fn f ->
-          {fmt_type_name(f[:name], longest_width), fmt_type(f)}
+    dedicated_types =
+      dedicated_types ++
+        Enum.map(oneofs, fn oneof ->
+          type_str =
+            fields
+            |> Enum.filter(fn f ->
+              f[:oneof] == oneof[:index]
+            end)
+            |> Enum.map_join(" | ", fn f ->
+              "{:#{f[:name]}, #{Util.safe_type_name(f[:name])}()}"
+            end)
+
+          {oneof[:name], type_str <> " | nil", Util.fmt_doc_str(oneof[:location])}
         end)
 
-    types =
+    dedicated_types =
       if Enum.empty?(extensions) do
-        types
+        dedicated_types
       else
-        types ++ [{fmt_type_name(:__pb_extensions__, longest_width), "map"}]
+        dedicated_types ++ [{:__pb_extensions__, "map", ""}]
       end
 
-    "  @type t :: %__MODULE__{\n" <>
-      Enum.map_join(types, ",\n", fn {k, v} ->
-        "    #{k} #{v}"
-      end) <> "\n  }\n"
+    dedicated_types_str =
+      dedicated_types
+      |> Enum.flat_map(fn {name, spec, docs} ->
+        type_spec_str = "  @type #{Util.safe_type_name(name)} :: #{spec}"
+
+        if String.length(String.trim(docs)) > 0 do
+          [
+            "",
+            "  @typedoc \"\"\"",
+            docs,
+            "\"\"\"",
+            type_spec_str,
+            ""
+          ]
+        else
+          [type_spec_str]
+        end
+      end)
+      |> Enum.join("\n")
+
+    aggregated_field_types =
+      fields
+      |> Enum.filter(fn f -> !f[:oneof] end)
+      |> Enum.map(& &1[:name])
+
+    aggregated_oneof_types = oneofs |> Enum.map(& &1[:name])
+
+    aggregated_type_fields_str =
+      (aggregated_field_types ++ aggregated_oneof_types)
+      |> Enum.map_join(",\n", fn name ->
+        "    #{name}: #{Util.safe_type_name(name)}()"
+      end)
+
+    aggregated_type_str =
+      [
+        "  @type t :: %__MODULE__{",
+        aggregated_type_fields_str,
+        "  }"
+      ]
+      |> Enum.join("\n")
+
+    dedicated_types_str <> "\n" <> aggregated_type_str
   end
 
-  defp oneofs_str(oneofs) do
+  defp gen_oneofs(oneofs) do
     oneofs
-    |> Enum.with_index()
-    |> Enum.map(fn {oneof, index} ->
-      "oneof :#{oneof.name}, #{index}"
+    |> Enum.map(fn oneof ->
+      "oneof :#{oneof.name}, #{oneof.index}"
     end)
-  end
-
-  defp fmt_type_name(name, len) do
-    String.pad_trailing("#{name}:", len + 1)
   end
 
   defp fmt_type(%{opts: %{map: true}, map: {{k_type, k_name}, {v_type, v_name}}}) do
@@ -170,13 +238,35 @@ defmodule Protobuf.Protoc.Generator.Message do
 
   defp type_to_spec(enum, _, _), do: TypeUtil.enum_to_spec(enum)
 
+  def get_oneofs(ctx, oneofs) do
+    oneofs
+    |> Enum.with_index()
+    |> Enum.map(fn {oneof, index} ->
+      %{
+        name: oneof.name,
+        index: index,
+        location: Util.find_location(with_message_oneof_path(ctx, index))
+      }
+    end)
+  end
+
   def get_fields(ctx, desc) do
     oneofs = Enum.map(desc.oneof_decl, & &1.name)
     nested_maps = nested_maps(ctx, desc)
-    Enum.map(desc.field, fn f -> get_field(ctx, f, nested_maps, oneofs) end)
+
+    desc.field
+    |> Enum.with_index()
+    |> Enum.map(fn {f, index} ->
+      get_field(with_message_field_path(ctx, index), f, nested_maps, oneofs)
+    end)
   end
 
-  def get_field(ctx, f, nested_maps, oneofs) do
+  def get_field(
+        ctx,
+        f,
+        nested_maps,
+        oneofs
+      ) do
     opts = field_options(f, ctx.syntax)
     map = nested_maps[f.type_name]
     opts = if map, do: Map.put(opts, :map, true), else: opts
@@ -198,7 +288,8 @@ defmodule Protobuf.Protoc.Generator.Message do
       opts: opts,
       opts_str: opts_str,
       map: map,
-      oneof: f.oneof_index
+      oneof: f.oneof_index,
+      location: Util.find_location(ctx)
     }
   end
 

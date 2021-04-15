@@ -1,8 +1,12 @@
 defmodule <%= name %> do
+  <%= if not is_nil(docs) do %><%= docs %>
+  <% else %>
   @moduledoc false
+  <% end %>
   use Protobuf<%= options %>
 
-  <%= typespec %>
+  <%= typespec <> "\n" %>
+  
   defstruct [<%= struct_fields %>]
 
   <%= if not is_nil(desc) do %>
@@ -17,7 +21,7 @@ defmodule <%= name %> do
 <%= for v <- oneofs do %>  <%= v %>
 <% end %>
 
-<%= for f <- fields do %>  field <%= f %>
+<%= for f <- fields do %>  <%= f %>
 <% end %>
 
   <%= if not is_nil(extensions) do %>

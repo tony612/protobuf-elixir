@@ -68,8 +68,8 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
 
     {[], [msg]} = Generator.generate(ctx, desc)
     assert msg =~ "defstruct [:a, :b]\n"
-    assert msg =~ "a: integer"
-    assert msg =~ "b: String.t"
+    assert msg =~ "a :: integer"
+    assert msg =~ "b :: String.t"
     assert msg =~ "field :a, 1, optional: true, type: :int32\n"
     assert msg =~ "field :b, 2, required: true, type: :string\n"
   end
@@ -107,8 +107,8 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
 
     {[], [msg]} = Generator.generate(ctx, desc)
     assert msg =~ "defstruct [:a, :b, :c]\n"
-    assert msg =~ "a: integer"
-    assert msg =~ "b: String.t"
+    assert msg =~ "a :: integer"
+    assert msg =~ "b :: String.t"
     assert msg =~ "field :a, 1, type: :int32\n"
     assert msg =~ "field :b, 2, type: :string\n"
     assert msg =~ "field :c, 3, repeated: true, type: :int32\n"
@@ -133,7 +133,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "a: integer"
+    assert msg =~ "a :: integer"
     assert msg =~ "field :a, 1, optional: true, type: :int32, default: 42\n"
   end
 
@@ -214,8 +214,10 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "bar: Bar.t | nil"
-    assert msg =~ "baz: [Baz.t]"
+    assert msg =~ "@type bar :: Bar.t | nil"
+    assert msg =~ "bar: bar()"
+    assert msg =~ "@type baz :: [Baz.t]"
+    assert msg =~ "baz: baz()"
   end
 
   test "generate/2 supports map field" do
@@ -267,7 +269,8 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[[]], [_, msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "a: %{integer => FooBar.AbCd.Bar.t | nil}"
+    assert msg =~ "@type a :: %{integer => FooBar.AbCd.Bar.t | nil}"
+    assert msg =~ "a: a()"
     assert msg =~ "field :a, 1, repeated: true, type: FooBar.AbCd.Foo.ProjectsEntry, map: true\n"
   end
 
@@ -295,7 +298,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "a: FooBar.AbCd.EnumFoo.t"
+    assert msg =~ "a :: FooBar.AbCd.EnumFoo.t"
     assert msg =~ "field :a, 1, optional: true, type: FooBar.AbCd.EnumFoo, enum: true\n"
   end
 
@@ -346,7 +349,7 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "a: OtherPkg.MsgFoo.t"
+    assert msg =~ "a :: OtherPkg.MsgFoo.t"
     assert msg =~ "field :a, 1, optional: true, type: OtherPkg.MsgFoo\n"
   end
 
@@ -448,10 +451,14 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "first: {atom, any},\n"
-    assert msg =~ "second: {atom, any},\n"
-    assert msg =~ "other: integer\n"
-    refute msg =~ "a: integer,\n"
+    assert msg =~ "@type first :: {:a, a()} | {:b, b()} | nil\n"
+    assert msg =~ "@type second :: {:c, c()} | {:d, d()} | nil\n"
+    assert msg =~ "@type other :: integer\n"
+    assert msg =~ "@type a :: integer\n"
+    refute msg =~ "a: integer\n"
+    assert msg =~ "other: other(),\n"
+    assert msg =~ "first: first(),\n"
+    assert msg =~ "second: second()\n"
     assert msg =~ "defstruct [:first, :second, :other]\n"
     assert msg =~ "oneof :first, 0\n"
     assert msg =~ "oneof :second, 1\n"

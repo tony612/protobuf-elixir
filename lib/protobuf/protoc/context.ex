@@ -29,7 +29,15 @@ defmodule Protobuf.Protoc.Context do
             gen_descriptors?: false,
 
             # Elixirpb.FileOptions
-            custom_file_options: %{}
+            custom_file_options: %{},
+
+            # Encapsulates information about the original source file from which a
+            # FileDescriptorProto was generated.
+            source_code_info: %{location: []},
+
+            # path to a Location as per documentation for protobufs `descriptor.proto/SourceCodeInfo/Location`
+            # see: https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/descriptor.proto#L798
+            location_path: []
 
   def cal_file_options(ctx, nil) do
     %{ctx | custom_file_options: %{}, module_prefix: ctx.package || ""}

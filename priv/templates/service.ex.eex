@@ -11,12 +11,31 @@ defmodule <%= mod_name %>.Service do
   end
   <% end %>
 
-<%= Enum.map methods, fn(method) -> %>
-  rpc <%= method %>
+<%= Enum.map methods, fn(%{name: name, input: input, output: output}) -> %>
+  rpc <%= ":#{name}, #{input}, #{output}" %>
 <% end %>
 end
 
 defmodule <%= mod_name %>.Stub do
   @moduledoc false
   use GRPC.Stub, service: <%= mod_name %>.Service
+end
+
+defmodule <%= mod_name %>.Behaviour do
+  <%= docs %>
+
+  <%= methods |> Enum.flat_map(fn m ->
+    cb_str = "@callback #{m[:handler_name]}(input :: #{m[:input]}.t(), stream :: GRPC.Server.Stream.t()) :: #{m[:output]}.t()"
+
+    if String.length(String.trim(m[:docs])) > 0 do
+      ["", "@doc \"\"\"", m[:docs], "\"\"\"", cb_str, ""]
+    else
+      [cb_str]
+    end
+  end) |> Enum.join("\n") %>
+
+
+  @optional_callbacks <%= methods |> Enum.map_join(", ", fn m ->
+    "#{m[:handler_name]}: 2"
+  end) %>
 end

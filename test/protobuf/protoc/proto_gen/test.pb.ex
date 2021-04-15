@@ -1,18 +1,37 @@
 defmodule My.Test.HatType do
-  @moduledoc false
+  @moduledoc """
+  The Comment, yadda yadda yadda
+  More details
+  """
   use Protobuf, enum: true, syntax: :proto2
 
-  @type t :: integer | :FEDORA | :FEZ
+  @typedoc """
+  deliberately skipping 0
+  """
+  @type fedora :: :FEDORA
+
+  @type fez :: :FEZ
+  @type t :: integer | fedora() | fez()
 
   field :FEDORA, 1
   field :FEZ, 2
 end
 
 defmodule My.Test.Days do
-  @moduledoc false
+  @moduledoc """
+  This enum represents days of the week.
+  """
   use Protobuf, enum: true, syntax: :proto2
 
-  @type t :: integer | :MONDAY | :TUESDAY | :LUNDI
+  @type monday :: :MONDAY
+  @type tuesday :: :TUESDAY
+
+  @typedoc """
+  same value as MONDAY
+  """
+  @type lundi :: :LUNDI
+
+  @type t :: integer | monday() | tuesday() | lundi()
 
   field :MONDAY, 1
   field :TUESDAY, 2
@@ -23,7 +42,10 @@ defmodule My.Test.Request.Color do
   @moduledoc false
   use Protobuf, enum: true, syntax: :proto2
 
-  @type t :: integer | :RED | :GREEN | :BLUE
+  @type red :: :RED
+  @type green :: :GREEN
+  @type blue :: :BLUE
+  @type t :: integer | red() | green() | blue()
 
   field :RED, 0
   field :GREEN, 1
@@ -34,7 +56,9 @@ defmodule My.Test.Reply.Entry.Game do
   @moduledoc false
   use Protobuf, enum: true, syntax: :proto2
 
-  @type t :: integer | :FOOTBALL | :TENNIS
+  @type football :: :FOOTBALL
+  @type tennis :: :TENNIS
+  @type t :: integer | football() | tennis()
 
   field :FOOTBALL, 1
   field :TENNIS, 2
@@ -44,9 +68,11 @@ defmodule My.Test.Request.SomeGroup do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type group_field :: integer
   @type t :: %__MODULE__{
-          group_field: integer
+          group_field: group_field()
         }
+
   defstruct [:group_field]
 
   field :group_field, 9, optional: true, type: :int32
@@ -56,10 +82,13 @@ defmodule My.Test.Request.NameMappingEntry do
   @moduledoc false
   use Protobuf, map: true, syntax: :proto2
 
+  @type key :: integer
+  @type value :: String.t()
   @type t :: %__MODULE__{
-          key: integer,
-          value: String.t()
+          key: key(),
+          value: value()
         }
+
   defstruct [:key, :value]
 
   field :key, 1, optional: true, type: :int32
@@ -70,10 +99,13 @@ defmodule My.Test.Request.MsgMappingEntry do
   @moduledoc false
   use Protobuf, map: true, syntax: :proto2
 
+  @type key :: integer
+  @type value :: My.Test.Reply.t() | nil
   @type t :: %__MODULE__{
-          key: integer,
-          value: My.Test.Reply.t() | nil
+          key: key(),
+          value: value()
         }
+
   defstruct [:key, :value]
 
   field :key, 1, optional: true, type: :sint64
@@ -81,20 +113,63 @@ defmodule My.Test.Request.MsgMappingEntry do
 end
 
 defmodule My.Test.Request do
-  @moduledoc false
+  @moduledoc """
+  This is a message that might be sent somewhere.
+  """
   use Protobuf, syntax: :proto2
 
+  @type key :: [integer]
+
+  @typedoc """
+  optional imp.ImportedMessage imported_message = 2;
+
+  no default
+  """
+  @type hue :: My.Test.Request.Color.t()
+
+  @type hat :: My.Test.HatType.t()
+
+  @typedoc """
+  optional imp.ImportedMessage.Owner owner = 6;
+  """
+  @type deadline :: float | :infinity | :negative_infinity | :nan
+
+  @type somegroup :: any
+
+  @typedoc """
+  These foreign types are in imp2.proto,
+  which is publicly imported by imp.proto.
+   optional imp.PubliclyImportedMessage pub = 10;
+   optional imp.PubliclyImportedEnum pub_enum = 13 [default=HAIR];
+
+  This is a map field. It will generate map[int32]string.
+  """
+  @type name_mapping :: %{integer => String.t()}
+
+  @typedoc """
+  This is a map field whose value type is a message.
+  """
+  @type msg_mapping :: %{integer => My.Test.Reply.t() | nil}
+
+  @type reset :: integer
+
+  @typedoc """
+  This field should not conflict with any getters.
+  """
+  @type get_key :: String.t()
+
   @type t :: %__MODULE__{
-          key: [integer],
-          hue: My.Test.Request.Color.t(),
-          hat: My.Test.HatType.t(),
-          deadline: float | :infinity | :negative_infinity | :nan,
-          somegroup: any,
-          name_mapping: %{integer => String.t()},
-          msg_mapping: %{integer => My.Test.Reply.t() | nil},
-          reset: integer,
-          get_key: String.t()
+          key: key(),
+          hue: hue(),
+          hat: hat(),
+          deadline: deadline(),
+          somegroup: somegroup(),
+          name_mapping: name_mapping(),
+          msg_mapping: msg_mapping(),
+          reset: reset(),
+          get_key: get_key()
         }
+
   defstruct [
     :key,
     :hue,
@@ -122,11 +197,15 @@ defmodule My.Test.Reply.Entry do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type key_that_needs_1234camel_casing :: integer
+  @type value :: integer
+  @type _my_field_name_2 :: integer
   @type t :: %__MODULE__{
-          key_that_needs_1234camel_CasIng: integer,
-          value: integer,
-          _my_field_name_2: integer
+          key_that_needs_1234camel_CasIng: key_that_needs_1234camel_casing(),
+          value: value(),
+          _my_field_name_2: _my_field_name_2()
         }
+
   defstruct [:key_that_needs_1234camel_CasIng, :value, :_my_field_name_2]
 
   field :key_that_needs_1234camel_CasIng, 1, required: true, type: :int64
@@ -138,11 +217,14 @@ defmodule My.Test.Reply do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type found :: [My.Test.Reply.Entry.t()]
+  @type compact_keys :: [integer]
+  @type __pb_extensions__ :: map
   @type t :: %__MODULE__{
-          found: [My.Test.Reply.Entry.t()],
-          compact_keys: [integer],
-          __pb_extensions__: map
+          found: found(),
+          compact_keys: compact_keys()
         }
+
   defstruct [:found, :compact_keys, :__pb_extensions__]
 
   field :found, 1, repeated: true, type: My.Test.Reply.Entry
@@ -155,10 +237,12 @@ defmodule My.Test.OtherBase do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type name :: String.t()
+  @type __pb_extensions__ :: map
   @type t :: %__MODULE__{
-          name: String.t(),
-          __pb_extensions__: map
+          name: name()
         }
+
   defstruct [:name, :__pb_extensions__]
 
   field :name, 1, optional: true, type: :string
@@ -171,6 +255,7 @@ defmodule My.Test.ReplyExtensions do
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{}
+
   defstruct []
 end
 
@@ -178,9 +263,11 @@ defmodule My.Test.OtherReplyExtensions do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type key :: integer
   @type t :: %__MODULE__{
-          key: integer
+          key: key()
         }
+
   defstruct [:key]
 
   field :key, 1, optional: true, type: :int32
@@ -191,6 +278,7 @@ defmodule My.Test.OldReply do
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{__pb_extensions__: map}
+
   defstruct [:__pb_extensions__]
 
   extensions [{100, 2_147_483_647}]
@@ -200,9 +288,11 @@ defmodule My.Test.Communique.SomeGroup do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type member :: String.t()
   @type t :: %__MODULE__{
-          member: String.t()
+          member: member()
         }
+
   defstruct [:member]
 
   field :member, 15, optional: true, type: :string
@@ -213,17 +303,51 @@ defmodule My.Test.Communique.Delta do
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{}
+
   defstruct []
 end
 
 defmodule My.Test.Communique do
-  @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type make_me_cry :: boolean
+  @type number_ :: integer
+  @type name :: String.t()
+  @type data :: binary
+  @type temp_c :: float | :infinity | :negative_infinity | :nan
+  @type height :: float | :infinity | :negative_infinity | :nan
+  @type today :: My.Test.Days.t()
+  @type maybe :: boolean
+
+  @typedoc """
+  name will conflict with Delta below
+  """
+  @type delta :: integer
+
+  @type msg :: My.Test.Reply.t() | nil
+  @type somegroup :: any
+
+  @typedoc """
+  This is a oneof, called "union".
+  """
+  @type union ::
+          {:number, number_()}
+          | {:name, name()}
+          | {:data, data()}
+          | {:temp_c, temp_c()}
+          | {:height, height()}
+          | {:today, today()}
+          | {:maybe, maybe()}
+          | {:delta, delta()}
+          | {:msg, msg()}
+          | {:somegroup, somegroup()}
+          | nil
+
   @type t :: %__MODULE__{
-          union: {atom, any},
-          make_me_cry: boolean
+          make_me_cry: make_me_cry(),
+          union: union()
         }
+
   defstruct [:union, :make_me_cry]
 
   oneof :union, 0
@@ -245,9 +369,11 @@ defmodule My.Test.Options do
   @moduledoc false
   use Protobuf, syntax: :proto2
 
+  @type opt1 :: String.t()
   @type t :: %__MODULE__{
-          opt1: String.t()
+          opt1: opt1()
         }
+
   defstruct [:opt1]
 
   field :opt1, 1, optional: true, type: :string, deprecated: true

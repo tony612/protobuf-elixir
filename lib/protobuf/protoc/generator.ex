@@ -21,7 +21,16 @@ defmodule Protobuf.Protoc.Generator do
     String.replace_suffix(name, ".proto", ".pb.ex")
   end
 
-  def generate_content(ctx, desc) do
+  defp only_locations_with_comments(locations) when is_list(locations) do
+    locations
+    |> Enum.reject(fn location ->
+      is_nil(location.leading_comments) and
+        is_nil(location.trailing_comments) and
+        length(location.leading_detached_comments) < 1
+    end)
+  end
+
+  def generate_content(ctx, %Google.Protobuf.FileDescriptorProto{} = desc) do
     ctx = %{
       ctx
       | package: desc.package || "",
@@ -29,9 +38,26 @@ defmodule Protobuf.Protoc.Generator do
         dep_type_mapping: get_dep_type_mapping(ctx, desc.dependency, desc.name)
     }
 
+    ctx =
+      if not is_nil(desc.source_code_info) and not is_nil(desc.source_code_info.location) do
+        %{
+          ctx
+          | source_code_info: %Google.Protobuf.SourceCodeInfo{
+              desc.source_code_info
+              | location: only_locations_with_comments(desc.source_code_info.location)
+            }
+        }
+      else
+        ctx
+      end
+
     ctx = Protobuf.Protoc.Context.cal_file_options(ctx, desc.options)
 
-    {enums, msgs} = MessageGenerator.generate_list(ctx, desc.message_type)
+    {enums, msgs} =
+      MessageGenerator.generate_list(
+        ctx,
+        desc.message_type
+      )
 
     list =
       EnumGenerator.generate_list(ctx, desc.enum_type) ++

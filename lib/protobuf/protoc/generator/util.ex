@@ -50,4 +50,92 @@ defmodule Protobuf.Protoc.Generator.Util do
 
   def print(v) when is_atom(v), do: inspect(v)
   def print(v), do: v
+
+  @spec fmt_doc_str(%Google.Protobuf.SourceCodeInfo.Location{} | nil) :: String.t()
+  def fmt_doc_str(%Google.Protobuf.SourceCodeInfo.Location{
+        leading_comments: leading_comments,
+        leading_detached_comments: leading_detached_comments,
+        trailing_comments: trailing_comments
+      }) do
+    all_comments = leading_detached_comments ++ [leading_comments, trailing_comments]
+
+    all_comments
+    |> Enum.reject(&is_nil/1)
+    |> Enum.flat_map(&String.split(&1, "\n"))
+    # only remove the first whitespace
+    # this is typical for comments like
+    #
+    #   // single whitespace after `// `
+    #
+    # or
+    #
+    #   /* single whitespace after `/* `
+    #    * and after `* `
+    #    */
+    |> Enum.map(&String.replace_prefix(&1, " ", ""))
+    |> Enum.join("\n")
+    |> String.trim_leading()
+    |> String.trim_trailing()
+  end
+
+  def fmt_doc_str(nil) do
+    ""
+  end
+
+  def find_location(%{
+        source_code_info: %Google.Protobuf.SourceCodeInfo{} = source_code_info,
+        location_path: location_path
+      }) do
+    source_code_info.location |> Enum.find(&(&1.path == location_path))
+  end
+
+  def find_location(_) do
+    nil
+  end
+
+  @spec safe_type_name(binary()) :: binary()
+  def safe_type_name(name) do
+    name = name |> to_string() |> String.downcase()
+
+    try do
+      original_compiler_options = Code.compiler_options()
+
+      # `Code.compile_string/2` will also load the compiled module into memory causing: `warning: redefining module SafeTypeNameWrapper (current version defined in memory)`
+      # to disable these temporarily we modify the compiler options
+      Code.compiler_options(ignore_module_conflict: true)
+
+      # this will fail for names like
+      # - `or` that are elixir operators and therefore are limited in how they can be used
+      # - `number` and other predefined types which can not be redefined (see: https://hexdocs.pm/elixir/typespecs.html)
+      Code.compile_string("defmodule SafeTypeNameWrapper do @type #{name} :: any() end")
+
+      # reset to the original/unmodified compiler options
+      Code.compiler_options(original_compiler_options)
+
+      name
+    rescue
+      _ ->
+        name <> "_"
+    end
+  end
+
+  def moduledoc_str(ctx, other_doc_present \\ false) do
+    case find_location(ctx) do
+      %Google.Protobuf.SourceCodeInfo.Location{} = location ->
+        "@moduledoc \"\"\"\n" <>
+          fmt_doc_str(location) <>
+          "\n\"\"\""
+
+      _ ->
+        if other_doc_present do
+          ""
+        else
+          "@moduledoc false"
+        end
+    end
+  end
+
+  def to_grpc_handler_func_name(name) do
+    name |> to_string |> Macro.underscore() |> String.to_atom()
+  end
 end

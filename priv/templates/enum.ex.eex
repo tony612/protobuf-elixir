@@ -1,5 +1,8 @@
 defmodule <%= name %> do
+  <%= if not is_nil(docs) do %><%= docs %>
+  <% else %>
   @moduledoc false
+  <% end %>
   use Protobuf<%= options %>
   
   <%= type %>

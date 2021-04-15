@@ -2,9 +2,19 @@ defmodule Protobuf.Protoc.Generator.Service do
   @moduledoc false
   alias Protobuf.Protoc.Generator.Util
 
+  defp with_service_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [6, index]}
+  end
+
+  defp with_service_method_path(%{location_path: path} = ctx, index) do
+    %{ctx | location_path: path ++ [2, index]}
+  end
+
   def generate_list(ctx, descs) do
     if Enum.member?(ctx.plugins, "grpc") do
-      Enum.map(descs, fn desc -> generate(ctx, desc) end)
+      descs
+      |> Enum.with_index()
+      |> Enum.map(fn {desc, index} -> generate(with_service_path(ctx, index), desc) end)
     else
       []
     end
@@ -14,15 +24,36 @@ defmodule Protobuf.Protoc.Generator.Service do
     # service can't be nested
     mod_name = Util.mod_name(ctx, [Util.trans_name(desc.name)])
     name = Util.attach_raw_pkg(desc.name, ctx.package)
-    methods = Enum.map(desc.method, fn m -> generate_service_method(ctx, m) end)
+    methods = get_methods(ctx, desc.method)
     generate_desc = if ctx.gen_descriptors?, do: desc, else: nil
-    Protobuf.Protoc.Template.service(mod_name, name, methods, generate_desc)
+
+    docs =
+      Util.moduledoc_str(
+        ctx,
+        methods |> Enum.all?(fn m -> String.length(String.trim(m[:docs])) end)
+      )
+
+    Protobuf.Protoc.Template.service(mod_name, name, methods, generate_desc, docs)
   end
 
-  defp generate_service_method(ctx, m) do
-    input = service_arg(Util.type_from_type_name(ctx, m.input_type), m.client_streaming)
-    output = service_arg(Util.type_from_type_name(ctx, m.output_type), m.server_streaming)
-    ":#{m.name}, #{input}, #{output}"
+  defp get_methods(ctx, descs) do
+    descs
+    |> Enum.with_index()
+    |> Enum.map(fn {desc, index} ->
+      get_service_method(with_service_method_path(ctx, index), desc)
+    end)
+  end
+
+  defp get_service_method(ctx, method) do
+    %{
+      name: method.name,
+      handler_name: Util.to_grpc_handler_func_name(method.name),
+      input:
+        service_arg(Util.type_from_type_name(ctx, method.input_type), method.client_streaming),
+      output:
+        service_arg(Util.type_from_type_name(ctx, method.output_type), method.server_streaming),
+      docs: Util.fmt_doc_str(Util.find_location(ctx))
+    }
   end
 
   defp service_arg(type, true), do: "stream(#{type})"

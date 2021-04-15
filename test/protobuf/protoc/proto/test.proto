@@ -6,6 +6,10 @@ package my.test;  // dotted package name
 //import "imp.proto";
 import "multi/multi1.proto";  // unused import
 
+/*
+  The Comment, yadda yadda yadda
+  More details
+  */
 enum HatType {
   // deliberately skipping 0
   FEDORA = 1;
