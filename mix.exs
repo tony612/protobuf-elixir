@@ -13,7 +13,7 @@ defmodule Protobuf.Mixfile do
       dialyzer: [plt_add_apps: [:mix, :jason]],
       elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps(),
-      escript: escript(),
+      escript: escript(Mix.env()),
       description: description(),
       package: package(),
       aliases: aliases(),
@@ -29,6 +29,7 @@ defmodule Protobuf.Mixfile do
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support", "test/protobuf/protoc/proto_gen"]
+  defp elixirc_paths(:conformance), do: ["lib", "conformance"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -41,9 +42,10 @@ defmodule Protobuf.Mixfile do
     ]
   end
 
-  defp escript do
-    [main_module: Protobuf.Protoc.CLI, name: "protoc-gen-elixir"]
-  end
+  defp escript(:conformance),
+    do: [main_module: Conformance.Protobuf.Runner, name: "conformance_client"]
+
+  defp escript(_), do: [main_module: Protobuf.Protoc.CLI, name: "protoc-gen-elixir"]
 
   defp description do
     "A pure Elixir implementation of Google Protobuf."
