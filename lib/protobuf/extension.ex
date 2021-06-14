@@ -130,11 +130,6 @@ defmodule Protobuf.Extension do
       Enum.each(props.extensions, fn {_, ext} ->
         fnum = ext.field_props.fnum
         fnum_key = {Protobuf.Extension, ext.extendee, fnum}
-
-        if GlobalStore.get(fnum_key, nil) do
-          raise "Extension #{inspect(ext.extendee)}##{fnum} already exists"
-        end
-
         GlobalStore.put(fnum_key, mod)
       end)
     end)
