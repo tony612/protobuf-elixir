@@ -261,6 +261,10 @@ defmodule Protobuf.DSL do
     |> cal_encoded_fnum()
   end
 
+  defp parse_field_opts([{:extensions, map} | t], acc) do
+    parse_field_opts(t, Map.put(acc, :extensions, map))
+  end
+
   defp parse_field_opts([{:optional, true} | t], acc) do
     parse_field_opts(t, Map.put(acc, :optional?, true))
   end

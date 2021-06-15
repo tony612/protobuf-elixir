@@ -292,6 +292,13 @@ defmodule Protobuf.Protoc.Generator.Message do
   defp merge_field_options(opts, %{options: nil}), do: opts
 
   defp merge_field_options(opts, f) do
+    opts =
+      if map_size(f.options.__pb_extensions__) > 0 do
+        Map.put(opts, :extensions, inspect(f.options.__pb_extensions__))
+      else
+        opts
+      end
+
     opts
     |> Map.put(:packed, f.options.packed)
     |> Map.put(:deprecated, f.options.deprecated)

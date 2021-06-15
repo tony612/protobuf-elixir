@@ -50,6 +50,10 @@ defmodule Protobuf.Protoc.IntegrationTest do
 
   test "options" do
     assert %{deprecated?: true} = My.Test.Options.__message_props__().field_props[1]
+
+    assert %{
+             extensions: %{{Mypkg.PbExtension, :myopt_bool} => true}
+           } = My.Test.Options.__message_props__().field_props[2]
   end
 
   test "extensions" do

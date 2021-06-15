@@ -18,7 +18,8 @@ defmodule Protobuf.FieldProps do
           packed?: boolean,
           map?: boolean,
           deprecated?: boolean,
-          encoded_fnum: iodata
+          encoded_fnum: iodata,
+          extensions: map
         }
   defstruct fnum: nil,
             name: nil,
@@ -36,5 +37,6 @@ defmodule Protobuf.FieldProps do
             packed?: nil,
             map?: false,
             deprecated?: false,
-            encoded_fnum: nil
+            encoded_fnum: nil,
+            extensions: %{}
 end

@@ -246,11 +246,17 @@ defmodule My.Test.Options do
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{
-          opt1: String.t()
+          opt1: String.t(),
+          opt2: String.t()
         }
-  defstruct [:opt1]
+  defstruct [:opt1, :opt2]
 
   field :opt1, 1, optional: true, type: :string, deprecated: true
+
+  field :opt2, 2,
+    optional: true,
+    type: :string,
+    extensions: %{{Mypkg.PbExtension, :myopt_bool} => true}
 end
 
 defmodule My.Test.PbExtension do

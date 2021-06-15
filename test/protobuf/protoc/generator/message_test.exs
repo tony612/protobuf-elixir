@@ -150,13 +150,20 @@ defmodule Protobuf.Protoc.Generator.MessageTest do
             number: 1,
             type: :TYPE_INT32,
             label: :LABEL_OPTIONAL,
-            options: Google.Protobuf.FieldOptions.new(packed: true)
+            options:
+              Google.Protobuf.FieldOptions.new(
+                packed: true,
+                __pb_extensions__: %{{Mypkg.PbExtension, :myopt_bool} => true}
+              )
           )
         ]
       )
 
     {[], [msg]} = Generator.generate(ctx, desc)
-    assert msg =~ "field :a, 1, optional: true, type: :int32, packed: true\n"
+
+    assert msg =~
+             "field :a, 1, optional: true, type: :int32, " <>
+               "extensions: %{{Mypkg.PbExtension, :myopt_bool} => true}, packed: true\n"
   end
 
   test "generate/2 supports option :deprecated" do

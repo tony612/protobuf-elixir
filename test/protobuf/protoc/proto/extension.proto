@@ -4,9 +4,12 @@ package ext;
 
 // -I src is needed, see Makefile
 import "elixirpb.proto";
+import "mypkg.proto";
 
 option (elixirpb.file).module_prefix = "Protobuf.Protoc.ExtTest";
 
 message Foo {
   optional string a = 1;
+  optional string b = 2 [(mypkg.myopt_bool)=true];
+  optional string c = 3 [(mypkg.myopt_string)="test"];
 }

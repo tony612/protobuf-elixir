@@ -19,6 +19,7 @@ defmodule Protobuf.Protoc.CLI do
 
   @doc false
   def main(["--version"]) do
+    Application.ensure_all_started(:protobuf)
     {:ok, version} = :application.get_key(:protobuf, :vsn)
     IO.puts(to_string(version))
   end
@@ -28,6 +29,9 @@ defmodule Protobuf.Protoc.CLI do
   end
 
   def main(_) do
+    Application.ensure_all_started(:protobuf)
+    load_custom_extensions()
+
     # https://groups.google.com/forum/#!topic/elixir-lang-talk/T5enez_BBTI
     :io.setopts(:standard_io, encoding: :latin1)
     bin = IO.binread(:all)
@@ -134,5 +138,15 @@ defmodule Protobuf.Protoc.CLI do
     [pkg, ns_str, name]
     |> Enum.filter(&(&1 && &1 != ""))
     |> Enum.join(".")
+  end
+
+  defp load_custom_extensions do
+    Application.get_env(:protobuf, :extension_paths, [])
+    |> Enum.map(&Path.wildcard/1)
+    |> List.flatten()
+    |> Enum.map(&Code.require_file/1)
+    |> List.flatten()
+    |> Enum.map(fn {module, _} -> module end)
+    |> Protobuf.Extension.cal_extensions()
   end
 end

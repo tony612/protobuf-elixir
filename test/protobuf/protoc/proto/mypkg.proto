@@ -1,0 +1,10 @@
+syntax = "proto2";
+
+package mypkg;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  optional bool myopt_bool = 100000;
+  optional string myopt_string = 100001 [default="test"];
+}
