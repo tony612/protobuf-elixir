@@ -67,6 +67,11 @@ defmodule Protobuf.Protoc.CLI do
     parse_params(ctx, t)
   end
 
+  def parse_params(ctx, ["package_prefix=" <> package | t]) do
+    ctx = %{ctx | package_prefix: package}
+    parse_params(ctx, t)
+  end
+
   def parse_params(ctx, _), do: ctx
 
   @doc false
@@ -78,16 +83,17 @@ defmodule Protobuf.Protoc.CLI do
   def find_types(ctx, [], acc), do: %{ctx | global_type_mapping: acc}
 
   def find_types(ctx, [desc | t], acc) do
-    types = find_types_in_proto(desc)
+    types = find_types_in_proto(ctx, desc)
     find_types(ctx, t, Map.put(acc, desc.name, types))
   end
 
   @doc false
-  def find_types_in_proto(%Google.Protobuf.FileDescriptorProto{} = desc) do
+  def find_types_in_proto(ctx, %Google.Protobuf.FileDescriptorProto{} = desc) do
     ctx =
       %Protobuf.Protoc.Context{
-        package: desc.package,
-        namespace: []
+        namespace: [],
+        package_prefix: ctx.package_prefix,
+        package: desc.package
       }
       |> Protobuf.Protoc.Context.cal_file_options(desc.options)
 
@@ -120,9 +126,11 @@ defmodule Protobuf.Protoc.CLI do
     Map.put(ctx, :namespace, new_ns)
   end
 
-  defp update_types(types, %{namespace: ns, package: pkg, module_prefix: prefix}, name) do
+  defp update_types(types, %{namespace: ns, package: pkg} = ctx, name) do
     type_name =
-      join_names(prefix || pkg, ns, name)
+      ctx
+      |> Protobuf.Protoc.Generator.Util.prefixed_name()
+      |> join_names(ns, name)
       |> Protobuf.Protoc.Generator.Util.normalize_type_name()
 
     Map.put(types, "." <> join_names(pkg, ns, name), %{type_name: type_name})

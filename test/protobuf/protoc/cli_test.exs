@@ -10,8 +10,13 @@ defmodule Protobuf.Protoc.CLITest do
 
   test "parse_params/2 parse plugins" do
     ctx = %Context{}
-    ctx = parse_params(ctx, "plugins=grpc,gen_descriptors=true")
-    assert ctx == %Context{plugins: ["grpc"], gen_descriptors?: true}
+    ctx = parse_params(ctx, "plugins=grpc,gen_descriptors=true,package_prefix=elixir.protobuf")
+
+    assert ctx == %Context{
+             plugins: ["grpc"],
+             gen_descriptors?: true,
+             package_prefix: "elixir.protobuf"
+           }
   end
 
   test "find_types/2 returns multiple files" do
@@ -30,7 +35,7 @@ defmodule Protobuf.Protoc.CLITest do
       )
 
     assert %{".pkg.Msg" => %{type_name: "Pkg.Msg"}, ".pkg.Enum" => %{type_name: "Pkg.Enum"}} =
-             find_types_in_proto(desc)
+             find_types_in_proto(%Context{}, desc)
   end
 
   test "find_types_in_proto/1 have nested message types" do
@@ -51,7 +56,7 @@ defmodule Protobuf.Protoc.CLITest do
              ".pkg.Msg" => %{type_name: "Pkg.Msg"},
              ".pkg.Msg.NestedMsg" => %{type_name: "Pkg.Msg.NestedMsg"},
              ".pkg.Msg.NestedEnumMsg" => %{type_name: "Pkg.Msg.NestedEnumMsg"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(%Context{}, desc)
   end
 
   test "find_types_in_proto/1 have deeper nested message types" do
@@ -76,7 +81,7 @@ defmodule Protobuf.Protoc.CLITest do
              ".pkg.Msg" => %{type_name: "Pkg.Msg"},
              ".pkg.Msg.NestedMsg" => %{type_name: "Pkg.Msg.NestedMsg"},
              ".pkg.Msg.NestedMsg.NestedMsg2" => %{type_name: "Pkg.Msg.NestedMsg.NestedMsg2"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(%Context{}, desc)
   end
 
   test "find_types_in_proto/1 supports elixir_module_prefix" do
@@ -98,6 +103,6 @@ defmodule Protobuf.Protoc.CLITest do
     assert %{
              ".pkg.Msg" => %{type_name: "FooBar.Prefix.Msg"},
              ".pkg.Enum" => %{type_name: "FooBar.Prefix.Enum"}
-           } = find_types_in_proto(desc)
+           } = find_types_in_proto(%Context{}, desc)
   end
 end
