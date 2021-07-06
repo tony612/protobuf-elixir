@@ -67,7 +67,7 @@ defmodule Protobuf.Encoder do
         end
       end
 
-    if skip_field?(syntax, val, prop) || skip_enum?(prop, val) do
+    if skip_field?(syntax, val, prop) || skip_enum?(syntax, val, prop) do
       encode_fields(tail, syntax, struct, oneofs, acc)
     else
       acc = [encode_field(class_field(prop), val, prop) | acc]
@@ -176,11 +176,12 @@ defmodule Protobuf.Encoder do
     end
   end
 
-  defp skip_enum?(prop, value)
-  defp skip_enum?(%{enum?: false}, _), do: false
-  defp skip_enum?(%{enum?: true, oneof: oneof}, _) when not is_nil(oneof), do: false
-  defp skip_enum?(%{required?: true}, _), do: false
-  defp skip_enum?(%{type: type}, value), do: is_enum_default?(type, value)
+  defp skip_enum?(syntax, prop, value)
+  defp skip_enum?(:proto2, _, _), do: false
+  defp skip_enum?(_, _, %{enum?: false}), do: false
+  defp skip_enum?(_, _, %{enum?: true, oneof: oneof}) when not is_nil(oneof), do: false
+  defp skip_enum?(_, _, %{required?: true}), do: false
+  defp skip_enum?(_, value, %{type: type}), do: is_enum_default?(type, value)
 
   defp is_enum_default?({_, type}, v) when is_atom(v), do: type.value(v) == 0
   defp is_enum_default?({_, _}, v) when is_integer(v), do: v == 0
@@ -216,7 +217,7 @@ defmodule Protobuf.Encoder do
     Enum.reduce(pb_exts, encoded, fn {{ext_mod, key}, val}, acc ->
       case Protobuf.Extension.get_extension_props(mod, ext_mod, key) do
         %{field_props: prop} ->
-          if skip_field?(:proto2, val, prop) || skip_enum?(prop, val) do
+          if skip_field?(:proto2, val, prop) do
             encoded
           else
             [encode_field(class_field(prop), val, prop) | acc]

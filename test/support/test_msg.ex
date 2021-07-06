@@ -141,7 +141,7 @@ defmodule TestMsg do
     field :value, 2, type: :int32
   end
 
-  defmodule Bar2.Enum do
+  defmodule DefaultEnum2 do
     @moduledoc false
     use Protobuf, enum: true, syntax: :proto2
 
@@ -149,12 +149,20 @@ defmodule TestMsg do
     field :b, 1
   end
 
-  defmodule Bar2 do
+  defmodule EnumBar2 do
     @moduledoc false
     use Protobuf, syntax: :proto2
 
-    field :a, 1, required: true, type: Bar2.Enum, enum: true
-    field :b, 2, optional: true, type: Bar2.Enum, enum: true
+    field :a, 1, required: true, type: DefaultEnum2, enum: true
+    field :b, 2, optional: true, type: DefaultEnum2, enum: true
+  end
+
+  defmodule EnumFoo2 do
+    @moduledoc false
+    use Protobuf, syntax: :proto2
+
+    field :a, 1, optional: true, type: DefaultEnum2, enum: true
+    field :b, 2, optional: true, type: DefaultEnum2, enum: true
   end
 
   defmodule Scalars do

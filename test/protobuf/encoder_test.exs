@@ -169,16 +169,44 @@ defmodule Protobuf.EncoderTest do
              )
   end
 
-  test "encodes default value for proto2" do
+  test "encodes enum default value for proto2" do
     # Includes required
-    msg = TestMsg.Bar2.new(a: 0)
+    msg = TestMsg.EnumBar2.new(a: 0)
     assert Encoder.encode(msg) == <<8, 0>>
 
-    # Excludes optionals at default value
-    msg = TestMsg.Bar2.new(a: 0, b: 0)
+    # Missing required field `:a` occurs a runtime error
+    msg = TestMsg.EnumBar2.new()
+
+    assert_raise Protobuf.EncodeError, ~r/Got error when encoding TestMsg.EnumBar2/, fn ->
+      Encoder.encode(msg)
+    end
+
+    msg = TestMsg.EnumFoo2.new()
+    assert Encoder.encode(msg) == <<>>
+
+    # Explicitly set the enum default value should be encoded, should not return it as ""
+    msg = TestMsg.EnumBar2.new(a: 0)
     assert Encoder.encode(msg) == <<8, 0>>
 
-    msg = TestMsg.Bar2.new(a: 0, b: 1)
+    msg = TestMsg.EnumBar2.new(a: 1)
+    assert Encoder.encode(msg) == <<8, 1>>
+
+    msg = TestMsg.EnumBar2.new(a: 0, b: 0)
+    assert Encoder.encode(msg) == <<8, 0, 16, 0>>
+
+    msg = TestMsg.EnumBar2.new(a: 0, b: 1)
+    assert Encoder.encode(msg) == <<8, 0, 16, 1>>
+
+    msg = TestMsg.EnumFoo2.new(a: 0)
+    assert Encoder.encode(msg) == <<8, 0>>
+
+    msg = TestMsg.EnumFoo2.new(a: 1)
+    assert Encoder.encode(msg) == <<8, 1>>
+
+    msg = TestMsg.EnumFoo2.new(b: 0)
+    assert Encoder.encode(msg) == <<16, 0>>
+
+    msg = TestMsg.EnumFoo2.new(a: 0, b: 1)
     assert Encoder.encode(msg) == <<8, 0, 16, 1>>
   end
 end
