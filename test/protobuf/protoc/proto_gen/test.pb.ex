@@ -47,7 +47,7 @@ defmodule My.Test.Request.SomeGroup do
   @type t :: %__MODULE__{
           group_field: integer
         }
-  defstruct [:group_field]
+  defstruct group_field: nil
 
   field :group_field, 9, optional: true, type: :int32
 end
@@ -60,7 +60,7 @@ defmodule My.Test.Request.NameMappingEntry do
           key: integer,
           value: String.t()
         }
-  defstruct [:key, :value]
+  defstruct key: nil, value: nil
 
   field :key, 1, optional: true, type: :int32
   field :value, 2, optional: true, type: :string
@@ -74,7 +74,7 @@ defmodule My.Test.Request.MsgMappingEntry do
           key: integer,
           value: My.Test.Reply.t() | nil
         }
-  defstruct [:key, :value]
+  defstruct key: nil, value: nil
 
   field :key, 1, optional: true, type: :sint64
   field :value, 2, optional: true, type: My.Test.Reply
@@ -95,17 +95,15 @@ defmodule My.Test.Request do
           reset: integer,
           get_key: String.t()
         }
-  defstruct [
-    :key,
-    :hue,
-    :hat,
-    :deadline,
-    :somegroup,
-    :name_mapping,
-    :msg_mapping,
-    :reset,
-    :get_key
-  ]
+  defstruct key: [],
+            hue: nil,
+            hat: :FEDORA,
+            deadline: "inf",
+            somegroup: nil,
+            name_mapping: [],
+            msg_mapping: [],
+            reset: nil,
+            get_key: nil
 
   field :key, 1, repeated: true, type: :int64
   field :hue, 3, optional: true, type: My.Test.Request.Color, enum: true
@@ -127,7 +125,7 @@ defmodule My.Test.Reply.Entry do
           value: integer,
           _my_field_name_2: integer
         }
-  defstruct [:key_that_needs_1234camel_CasIng, :value, :_my_field_name_2]
+  defstruct key_that_needs_1234camel_CasIng: nil, value: 7, _my_field_name_2: nil
 
   field :key_that_needs_1234camel_CasIng, 1, required: true, type: :int64
   field :value, 2, optional: true, type: :int64, default: 7
@@ -143,7 +141,7 @@ defmodule My.Test.Reply do
           compact_keys: [integer],
           __pb_extensions__: map
         }
-  defstruct [:found, :compact_keys, :__pb_extensions__]
+  defstruct found: [], compact_keys: [], __pb_extensions__: nil
 
   field :found, 1, repeated: true, type: My.Test.Reply.Entry
   field :compact_keys, 2, repeated: true, type: :int32, packed: true
@@ -159,7 +157,7 @@ defmodule My.Test.OtherBase do
           name: String.t(),
           __pb_extensions__: map
         }
-  defstruct [:name, :__pb_extensions__]
+  defstruct name: nil, __pb_extensions__: nil
 
   field :name, 1, optional: true, type: :string
 
@@ -181,7 +179,7 @@ defmodule My.Test.OtherReplyExtensions do
   @type t :: %__MODULE__{
           key: integer
         }
-  defstruct [:key]
+  defstruct key: nil
 
   field :key, 1, optional: true, type: :int32
 end
@@ -191,7 +189,7 @@ defmodule My.Test.OldReply do
   use Protobuf, syntax: :proto2
 
   @type t :: %__MODULE__{__pb_extensions__: map}
-  defstruct [:__pb_extensions__]
+  defstruct __pb_extensions__: nil
 
   extensions [{100, 2_147_483_647}]
 end
@@ -203,7 +201,7 @@ defmodule My.Test.Communique.SomeGroup do
   @type t :: %__MODULE__{
           member: String.t()
         }
-  defstruct [:member]
+  defstruct member: nil
 
   field :member, 15, optional: true, type: :string
 end
@@ -224,7 +222,7 @@ defmodule My.Test.Communique do
           union: {atom, any},
           make_me_cry: boolean
         }
-  defstruct [:union, :make_me_cry]
+  defstruct union: nil, make_me_cry: nil
 
   oneof :union, 0
 
@@ -248,7 +246,7 @@ defmodule My.Test.Options do
   @type t :: %__MODULE__{
           opt1: String.t()
         }
-  defstruct [:opt1]
+  defstruct opt1: nil
 
   field :opt1, 1, optional: true, type: :string, deprecated: true
 end
