@@ -86,14 +86,8 @@ defmodule Protobuf.DSL do
         unquote(def_extension_functions())
       end
 
-      if unquote(syntax == :proto3) do
-        def __default_struct__ do
-          unquote(Macro.escape(default_struct))
-        end
-      else
-        def __default_struct__ do
-          unquote(Macro.escape(default_struct))
-        end
+      def __default_struct__ do
+        unquote(Macro.escape(default_struct))
       end
     end
   end
