@@ -116,18 +116,12 @@ defmodule Protobuf.Extension do
 
   @doc false
   def cal_extensions(mods) do
-    mods
-    |> Enum.filter(fn mod ->
-      if to_string(mod) =~ ~r/\.PbExtension$/ && Code.ensure_loaded?(mod) do
-        function_exported?(mod, :__protobuf_info__, 1)
-      end
-    end)
-    |> Enum.map(fn mod ->
-      {mod, mod.__protobuf_info__(:extension_props)}
-    end)
-    |> Enum.reject(fn {_mod, props} -> is_nil(props) end)
-    |> Enum.each(fn {mod, props} ->
-      Enum.each(props.extensions, fn {_, ext} ->
+    for mod <- mods,
+        to_string(mod) =~ ~r/\.PbExtension$/,
+        Code.ensure_loaded?(mod),
+        function_exported?(mod, :__protobuf_info__, 1),
+        %{extensions: extensions} = mod.__protobuf_info__(:extension_props) do
+      Enum.each(extensions, fn {_, ext} ->
         fnum = ext.field_props.fnum
         fnum_key = {Protobuf.Extension, ext.extendee, fnum}
 
@@ -137,6 +131,6 @@ defmodule Protobuf.Extension do
 
         GlobalStore.put(fnum_key, mod)
       end)
-    end)
+    end
   end
 end
