@@ -29,11 +29,10 @@ defmodule Protobuf.Application do
         :erlang.loaded()
 
       :interactive ->
-        for {app, _, _} <- Application.loaded_applications() do
+        Enum.flat_map(Application.loaded_applications(), fn {app, _desc, _vsn} ->
           {:ok, modules} = :application.get_key(app, :modules)
           modules
-        end
-        |> Enum.concat()
+        end)
     end
   end
 end
