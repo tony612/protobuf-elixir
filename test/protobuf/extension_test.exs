@@ -1,15 +1,13 @@
 defmodule Protobuf.ExtensionTest do
   use ExUnit.Case, async: true
 
-  alias Protobuf.GlobalStore
-
   alias TestMsg.Ext
 
   test "extension persistent works" do
-    assert Ext.PbExtension = GlobalStore.get({Protobuf.Extension, Ext.Foo1, 1047}, nil)
-    assert Ext.PbExtension = GlobalStore.get({Protobuf.Extension, Ext.Foo1, 1048}, nil)
-    assert Ext.PbExtension = GlobalStore.get({Protobuf.Extension, Ext.Foo1, 1049}, nil)
-    assert Ext.PbExtension = GlobalStore.get({Protobuf.Extension, Ext.Foo2, 1047}, nil)
+    assert Ext.PbExtension == :persistent_term.get({Protobuf.Extension, Ext.Foo1, 1047})
+    assert Ext.PbExtension == :persistent_term.get({Protobuf.Extension, Ext.Foo1, 1048})
+    assert Ext.PbExtension == :persistent_term.get({Protobuf.Extension, Ext.Foo1, 1049})
+    assert Ext.PbExtension == :persistent_term.get({Protobuf.Extension, Ext.Foo2, 1047})
   end
 
   test "extension get/put work" do

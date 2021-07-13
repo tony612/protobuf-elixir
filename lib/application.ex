@@ -9,6 +9,7 @@ defmodule Protobuf.Application do
   """
 
   @doc false
+  @impl true
   def start(_type, _args) do
     if Application.get_env(:protobuf, :extensions, :disabled) == :enabled do
       mods = get_all_modules()
@@ -21,6 +22,12 @@ defmodule Protobuf.Application do
 
     children = []
     Supervisor.start_link(children, strategy: :one_for_one)
+  end
+
+  @impl true
+  def stop(_state) do
+    Protobuf.Extension.unload_extensions()
+    :ok
   end
 
   defp get_all_modules() do

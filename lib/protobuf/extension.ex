@@ -4,8 +4,7 @@ defmodule Protobuf.Extension do
   let you set extra fields for previously defined messages(even for messages in other packages)
   without changing the original message.
 
-  **This is an experimental feature**, to use it, Erlang should be >= 21.2 because `:persistent_term`
-  is used and config should be set:
+  **This is an experimental feature**, the following config should be set to use it:
 
       # Without this, modules won't be scanned to get extensions metadata.
       # Functions like `get_extension` and `put_extension` still exist, but they don't work.
@@ -38,7 +37,6 @@ defmodule Protobuf.Extension do
       Foo.put_extension(foo, Ext.PbExtension, :my_custom, "Custom field")
       Foo.get_extension(foo, Ext.PbExtension, :my_custom)
   """
-  alias Protobuf.GlobalStore
 
   @doc "The actual function for `put_extension`"
   @spec put(module, map, module, atom, any) :: map
@@ -97,7 +95,7 @@ defmodule Protobuf.Extension do
 
   @doc false
   def get_extension_props_by_tag(extendee, tag) do
-    case GlobalStore.get({Protobuf.Extension, extendee, tag}, nil) do
+    case :persistent_term.get({Protobuf.Extension, extendee, tag}, nil) do
       nil ->
         nil
 
@@ -131,12 +129,18 @@ defmodule Protobuf.Extension do
         fnum = ext.field_props.fnum
         fnum_key = {Protobuf.Extension, ext.extendee, fnum}
 
-        if GlobalStore.get(fnum_key, nil) do
+        if :persistent_term.get(fnum_key, nil) do
           raise "Extension #{inspect(ext.extendee)}##{fnum} already exists"
         end
 
-        GlobalStore.put(fnum_key, mod)
+        :persistent_term.put(fnum_key, mod)
       end)
     end)
+  end
+
+  def unload_extensions do
+    for {{Protobuf.Extension, _extendee, _tag} = key, _mod} <- :persistent_term.get() do
+      :persistent_term.erase(key)
+    end
   end
 end
