@@ -86,14 +86,8 @@ defmodule Protobuf.DSL do
         unquote(def_extension_functions())
       end
 
-      if unquote(syntax == :proto3) do
-        def __default_struct__ do
-          unquote(Macro.escape(default_struct))
-        end
-      else
-        def __default_struct__ do
-          unquote(Macro.escape(default_struct))
-        end
+      def __default_struct__ do
+        unquote(Macro.escape(default_struct))
       end
     end
   end
@@ -141,10 +135,6 @@ defmodule Protobuf.DSL do
 
   defp def_extension_functions() do
     quote do
-      def put_extension(%__MODULE__{} = struct, extension_mod, field, value) do
-        Protobuf.Extension.put(__MODULE__, struct, extension_mod, field, value)
-      end
-
       def put_extension(%{} = map, extension_mod, field, value) do
         Protobuf.Extension.put(__MODULE__, map, extension_mod, field, value)
       end
